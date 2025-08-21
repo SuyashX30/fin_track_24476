@@ -1,0 +1,59 @@
+-- Create Database
+CREATE DATABASE fintrack_db;
+
+-- Switch to the new DB (if using psql)
+\c fintrack_db;
+
+-- ========================
+-- 1. Clients Table
+-- ========================
+CREATE TABLE clients (
+    client_id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    phone VARCHAR(15),
+    company VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ========================
+-- 2. Transactions Table
+-- ========================
+CREATE TABLE transactions (
+    txn_id SERIAL PRIMARY KEY,
+    client_id INT NOT NULL,
+    txn_date DATE NOT NULL,
+    txn_type VARCHAR(20) CHECK (txn_type IN ('Credit','Debit')) NOT NULL,
+    amount NUMERIC(12,2) CHECK (amount >= 0) NOT NULL,
+    category VARCHAR(50),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Foreign key constraint
+    CONSTRAINT fk_txn_client FOREIGN KEY (client_id)
+        REFERENCES clients(client_id) ON DELETE CASCADE
+);
+
+-- Optional: Index for faster queries by client/date
+CREATE INDEX idx_transactions_client_date ON transactions(client_id, txn_date);
+
+-- ========================
+-- 3. Investments Table
+-- ========================
+CREATE TABLE investments (
+    inv_id SERIAL PRIMARY KEY,
+    client_id INT NOT NULL,
+    asset_type VARCHAR(50) NOT NULL, -- e.g., Equity, Bond, MF, FD, Other
+    invested_amount NUMERIC(12,2) CHECK (invested_amount >= 0),
+    current_value NUMERIC(12,2) CHECK (current_value >= 0),
+    start_date DATE,
+    maturity_date DATE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    -- Foreign key constraint
+    CONSTRAINT fk_inv_client FOREIGN KEY (client_id)
+        REFERENCES clients(client_id) ON DELETE CASCADE
+);
+
+-- Optional: Index for faster queries by client/asset type
+CREATE INDEX idx_investments_client_asset ON investments(client_id, asset_type);
